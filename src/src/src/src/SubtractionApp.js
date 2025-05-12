@@ -1,69 +1,65 @@
 import { useState, useEffect } from "react";
-import RegistrationForm from "./RegistrationForm";
-import MainMenu from "./MainMenu";
-import SubtractionApp from "./SubtractionApp";
-import AdditionApp from "./AdditionApp";
-import MultiplicationApp from "./MultiplicationApp";
-import DivisionApp from "./DivisionApp";
 
-export default function App() {
-  const [stage, setStage] = useState("loading");
-  const [digitMode, setDigitMode] = useState(null);
-  const [selectedOperation, setSelectedOperation] = useState(null);
+export default function SubtractionApp({ onBack, digits }) {
+  const [question, setQuestion] = useState(generateQuestion());
+  const [userAnswer, setUserAnswer] = useState("");
+  const [score, setScore] = useState(0);
+  const [attempts, setAttempts] = useState(0);
+  const [history, setHistory] = useState([]);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  useEffect(() => {
-    const student = localStorage.getItem("studentInfo");
-    setStage(student ? "menu" : "register");
-  }, []);
+  function generateQuestion() {
+    const min = digits === 2 ? 10 : 100;
+    const max = digits === 2 ? 99 : 999;
+    const a = Math.floor(Math.random() * (max - min + 1)) + min;
+    const b = Math.floor(Math.random() * (a - min + 1)) + min;
+    return { a, b };
+  }
 
-  const handleDigitSelect = (operation, digits) => {
-    setSelectedOperation(operation);
-    setDigitMode(digits);
-    setStage(operation);
-  };
+  useEffect(() => setQuestion(generateQuestion()), [digits]);
 
-  if (stage === "loading") return null;
-  if (stage === "register") return <RegistrationForm onComplete={() => setStage("menu")} />;
-  if (stage === "menu") return (
-    <MainMenu onSelect={(op) => setStage(`${op}-select`)} />
-  );
+  function checkAnswer() {
+    const correct = question.a - question.b;
+    const isCorrect = parseInt(userAnswer) === correct;
+    setScore(score + (isCorrect ? 1 : 0));
+    setAttempts(attempts + 1);
+    setHistory([{ ...question, userAnswer, isCorrect }, ...history]);
+    setIsSubmitted(true);
+  }
 
-  if (stage === "subtraction-select") return (
-    <DigitSelector operation="subtraction" onSelect={handleDigitSelect} />
-  );
-  if (stage === "addition-select") return (
-    <DigitSelector operation="addition" onSelect={handleDigitSelect} />
-  );
-  if (stage === "multiplication-select") return (
-    <DigitSelector operation="multiplication" onSelect={handleDigitSelect} singleOption />
-  );
-  if (stage === "division-select") return (
-    <DigitSelector operation="division" onSelect={handleDigitSelect} />
-  );
+  function nextQuestion() {
+    setUserAnswer("");
+    setQuestion(generateQuestion());
+    setIsSubmitted(false);
+  }
 
-  if (stage === "subtraction") return <SubtractionApp onBack={() => setStage("menu")} digits={digitMode} />;
-  if (stage === "addition") return <AdditionApp onBack={() => setStage("menu")} digits={digitMode} />;
-  if (stage === "multiplication") return <MultiplicationApp onBack={() => setStage("menu")} />;
-  if (stage === "division") return <DivisionApp onBack={() => setStage("menu")} digits={digitMode} />;
-
-  return null;
-}
-
-function DigitSelector({ operation, onSelect, singleOption = false }) {
   return (
-    <div className="p-6 max-w-md mx-auto bg-white rounded-2xl shadow-md space-y-6 text-center">
-      <h2 className="text-xl font-bold">Select Digit Mode for {capitalize(operation)}</h2>
-      <div className="space-y-4">
-        <button onClick={() => onSelect(operation, 2)} className="w-full bg-blue-500 text-white py-3 rounded text-xl">2-Digit</button>
-        {!singleOption && (
-          <button onClick={() => onSelect(operation, 3)} className="w-full bg-indigo-500 text-white py-3 rounded text-xl">3-Digit</button>
-        )}
-        <button onClick={() => onSelect(null, null)} className="text-blue-600 underline text-sm mt-4" style={{ marginTop: '10px' }}>← Back to Menu</button>
+    <div className="p-6 max-w-md mx-auto bg-white rounded-2xl shadow-md space-y-6 border border-gray-300">
+      <button onClick={onBack} className="text-left text-blue-600 underline">← Back to Menu</button>
+      <h1 className="text-2xl font-extrabold text-center text-gray-800 underline">Subtraction ({digits}-Digit)</h1>
+      <div className="flex justify-center">
+        <div className="font-mono text-5xl tracking-widest">
+          <div className="text-right w-40">{question.a}</div>
+          <div className="text-right w-40">
+            <span className="inline-block w-8 text-left">-</span>
+            <span className="inline-block w-28 text-right">{question.b}</span>
+          </div>
+        </div>
       </div>
+      <input
+        type="number"
+        className="border-2 border-gray-500 p-3 text-3xl w-full rounded text-center"
+        value={userAnswer}
+        onChange={(e) => setUserAnswer(e.target.value)}
+        placeholder="Your answer"
+        disabled={isSubmitted}
+      />
+      {!isSubmitted ? (
+        <button onClick={checkAnswer} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 text-xl rounded w-full">✔ Submit</button>
+      ) : (
+        <button onClick={nextQuestion} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-xl rounded w-full">➜ Next Question</button>
+      )}
+      <div className="text-lg text-gray-700 text-center">Score: <span className="font-bold">{score}</span> / {attempts}</div>
     </div>
   );
-}
-
-function capitalize(word) {
-  return word.charAt(0).toUpperCase() + word.slice(1);
 }
