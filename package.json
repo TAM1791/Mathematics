@@ -2,6 +2,8 @@
   "name": "subtractmaster-app",
   "version": "1.0.0",
   "private": true,
+  "homepage":
+  "https://TAM1791.github.io/Mathematics",
   "dependencies": {
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
